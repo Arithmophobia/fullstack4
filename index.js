@@ -1,5 +1,6 @@
 const http = require('http')
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
 const bodyParser = require('body-parser')
 const cors = require('cors')
@@ -18,13 +19,25 @@ const Blog = mongoose.model('Blog', {
 
 module.exports = Blog
 
+morgan.token('data', function getData(req) {
+  return req.data
+})
+
+function assignData(req, res, next) {
+  req.data = JSON.stringify(req.body)
+  next()
+}
+
 app.use(cors())
 app.use(bodyParser.json())
-
+// then save data in string
+app.use(assignData)
+// finally log data
+app.use(morgan(':method :url :data :status :res[content-length] - :response-time ms'))
 //const mongoUrl = 'mongodb://localhost/bloglist'
 const mongoUrl = process.env.MONGODB_URI
 
-mongoose.connect(mongoUrl)
+mongoose.connect(mongoUrl, { useNewUrlParser: true })
 
 app.get('/api/blogs', (request, response) => {
   Blog
